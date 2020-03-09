@@ -12,7 +12,7 @@ A tool that allows you to backup all yourGitHub repos onto your local machine, a
 
 ## Installation
 
-A quick guide on how to install the tool. Not currenlty available.
+A quick guide on how to install the tool. Not currently available.
 
 ```bash
 brew tap tempor1s/gobackup
@@ -25,7 +25,7 @@ TODO
 
 ## Milestones
 
-- [ ] Clone a single repository to your computer through CLI.
+- [x] Clone a single repository to your computer through CLI.
 - [ ] Clone multiple repositories to local computer
 - [ ] Clone multiple reposiories using concurrency
 - [ ] Upload cloned repositories to other services like GitLab or BitBucket
