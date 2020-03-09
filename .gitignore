@@ -13,3 +13,13 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+# Mac
+.DS_Store
+
+# Other
+.vscode
+.vim
+.idea
+gobackup
+main
