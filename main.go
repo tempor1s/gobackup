@@ -1,7 +1,7 @@
 package main
 
-import "fmt"
+import "github.com/tempor1s/gobackup/cmd"
 
 func main() {
-	fmt.Println("Hello, GoBackup!")
+	cmd.Execute()
 }
