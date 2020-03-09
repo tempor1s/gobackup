@@ -1,6 +1,6 @@
 # gobackup
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/tempor1s/makeclones)](https://goreportcard.com/report/github.com/tempor1s/makeclones)
+[![Go Report Card](https://goreportcard.com/badge/github.com/tempor1s/gobackup)](https://goreportcard.com/report/github.com/tempor1s/gobackup)
 
 A tool that allows you to backup all yourGitHub repos onto your local machine, and even upload them to a different repo manager, like GitLab!
 
