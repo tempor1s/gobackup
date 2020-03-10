@@ -26,7 +26,7 @@ TODO
 ## Milestones
 
 - [x] Clone a single repository to your computer through CLI.
-- [ ] Clone multiple repositories to local computer
+- [x] Clone multiple repositories to local computer
 - [ ] Clone multiple reposiories using concurrency
 - [ ] Upload cloned repositories to other services like GitLab or BitBucket
 - [ ] Do the above concurrently

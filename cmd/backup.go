@@ -1,19 +1,25 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
 	"path"
-	"strings"
 
+	"github.com/google/go-github/github"
 	"github.com/spf13/cobra"
+	"golang.org/x/oauth2"
 	"gopkg.in/src-d/go-git.v4"
+	"gopkg.in/src-d/go-git.v4/plumbing/transport/http"
 )
 
 func init() {
 	rootCmd.AddCommand(backupCommand)
+	backupCommand.Flags().StringVarP(&Token, "token", "t", "", "Your personal access token. Needed to be able to clone private repos.")
 }
+
+var Token string
 
 var backupCommand = &cobra.Command{
 	Use:   "backup [github.com/username]",
@@ -36,10 +42,53 @@ func backup(cmd *cobra.Command, args []string) {
 	// Get the users github name for the directory
 	dirName := path.Base(repoURL)
 
-	// Make sure it has the https prefix, and add it if it does not
-	if !strings.HasPrefix(repoURL, "https://") {
-		repoURL = "https://" + repoURL
+	repos := getRepos()
+
+	// Clone all repos
+	cloneRepos(repos, dirName)
+}
+
+func getRepos() []string {
+	if Token == "" {
+		// TODO: Support non-access token based request
+		fmt.Println("WARNING: Personal Token was not passed in. Please pass in a token using --token - Support for NON-Token download coming soon.")
+		return []string{}
 	}
+
+	// Set up OAuth Token stuff
+	ctx := context.Background()
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: Token},
+	)
+
+	tc := oauth2.NewClient(ctx, ts)
+
+	// Create a new github client using the OAuth2 token
+	client := github.NewClient(tc)
+
+	// Get all repos that the user owns
+	opt := &github.RepositoryListOptions{
+		Affiliation: "owner",
+		ListOptions: github.ListOptions{
+			PerPage: 100000,
+		},
+	}
+
+	repos, _, err := client.Repositories.List(ctx, "", opt)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var ret []string
+	for _, repo := range repos {
+		ret = append(ret, *repo.HTMLURL)
+	}
+
+	return ret
+}
+
+func cloneRepos(repos []string, dirName string) {
 
 	// Create username dir to put all cloned repos in.
 	err := os.MkdirAll(dirName, os.ModePerm)
@@ -48,13 +97,20 @@ func backup(cmd *cobra.Command, args []string) {
 		log.Fatal(err)
 	}
 
-	// Clone the repo into username folder that we just created - will keep git information because not bare
-	_, err = git.PlainClone(dirName, false, &git.CloneOptions{
-		URL:      repoURL,
-		Progress: os.Stdout,
-	})
+	for _, repo := range repos {
+		fmt.Printf("[gobackup] cloning %s\n", repo)
+		repoName := path.Base(repo)
+		_, err := git.PlainClone(dirName+"/"+repoName, false, &git.CloneOptions{
+			Auth: &http.BasicAuth{
+				Username: "gobackup",
+				Password: Token,
+			},
+			URL:      repo,
+			Progress: os.Stdout,
+		})
 
-	if err != nil {
-		log.Fatal(err)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 }
