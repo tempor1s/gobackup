@@ -3,6 +3,7 @@ package backup
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -30,28 +31,38 @@ func GitHub(token string, args []string) {
 	fmt.Printf("Backing up your repos... Please wait - Don't worry if the bar freezes, this could take a few minutes :)\n\n")
 
 	// Get the URL to clone
-	repoURL := args[0]
+	userURL := args[0]
 
 	// Get the users github name for the directory
-	dirName := path.Base(repoURL)
+	dirName := path.Base(userURL)
 
 	// Start timer, create wait group so we dont exit early, and create channel for URL's
 	repos := make(chan string)
-	repoCount := make(chan int)
+	repoChan := make(chan int)
 	var wg sync.WaitGroup
 
 	// Get all repos for the user
-	go getRepos(token, dirName, repos, repoCount, &wg)
+	go getRepos(token, dirName, repos, repoChan, &wg)
 
 	// Get length of repos for the max of our progress bar
-	bar := progressbar.NewOptions(<-repoCount, progressbar.OptionSetRenderBlankState(true))
+	repoCount := <-repoChan
+	bar := progressbar.NewOptions(repoCount, progressbar.OptionSetRenderBlankState(true))
 
 	// Clone all repos
 	cloneRepos(repos, bar, dirName, token, &wg)
 	// Wait until all repos have been cloned before printing time and exiting
 	wg.Wait()
 
-	fmt.Printf("\n\nCloning repos complete. Thanks for using GoClones!\n")
+	// TODO: Refactor this out
+	size := dirSize(dirName)
+	sizeStr := fmt.Sprintf("%.2f MB", size)
+
+	if size > 1000 {
+		size = size / 1000
+		sizeStr = fmt.Sprintf("%.2f GB", size)
+	}
+
+	fmt.Printf("\n\nCloning repos complete. Cloned %d repos with a total size of %s\n", repoCount+1, sizeStr)
 }
 
 // getRepos will get all the repos for a user
@@ -157,4 +168,23 @@ func cloneWorker(repo, dirName, token string, wg *sync.WaitGroup, bar *progressb
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+var fileSize float64
+
+func dirSize(dirName string) float64 {
+	allFiles, err := ioutil.ReadDir(dirName)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, file := range allFiles {
+		if file.IsDir() {
+			dirSize(dirName + "/" + file.Name())
+		}
+		fileSize += float64(file.Size()) / 1000000.0
+	}
+
+	return fileSize
 }
