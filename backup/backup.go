@@ -7,9 +7,9 @@ import (
 	"os"
 	"path"
 	"sync"
-	"time"
 
 	"github.com/google/go-github/github"
+	"github.com/schollz/progressbar/v2"
 	"golang.org/x/oauth2"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/http"
@@ -27,6 +27,8 @@ func GitHub(token string, args []string) {
 		fmt.Println("WARNING: Personal token was not passed in. Please pass in a token using --token - Support for NON-token download coming soon.")
 	}
 
+	fmt.Printf("Backing up your repos... Please wait - Don't worry if the bar freezes, this could take a few minutes :)\n\n")
+
 	// Get the URL to clone
 	repoURL := args[0]
 
@@ -34,26 +36,32 @@ func GitHub(token string, args []string) {
 	dirName := path.Base(repoURL)
 
 	// Start timer, create wait group so we dont exit early, and create channel for URL's
-	start := time.Now()
 	repos := make(chan string)
+	repoCount := make(chan int)
 	var wg sync.WaitGroup
+
 	// Get all repos for the user
-	go getRepos(token, dirName, repos, &wg)
+	go getRepos(token, dirName, repos, repoCount, &wg)
+
+	// Get length of repos for the max of our progress bar
+	bar := progressbar.NewOptions(<-repoCount, progressbar.OptionSetRenderBlankState(true))
 
 	// Clone all repos
-	cloneRepos(repos, dirName, token, &wg)
+	cloneRepos(repos, bar, dirName, token, &wg)
 	// Wait until all repos have been cloned before printing time and exiting
 	wg.Wait()
-	fmt.Println(time.Since(start))
+
+	fmt.Printf("\n\nCloning repos complete. Thanks for using GoClones!\n")
 }
 
 // getRepos will get all the repos for a user
-func getRepos(token, userName string, c chan string, wg *sync.WaitGroup) {
+func getRepos(token, userName string, c chan string, count chan int, wg *sync.WaitGroup) {
 	// Set up OAuth token stuff
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: token},
 	)
+
 	tc := oauth2.NewClient(ctx, ts)
 
 	// Create a new github client using the OAuth2 token or no token
@@ -75,6 +83,7 @@ func getRepos(token, userName string, c chan string, wg *sync.WaitGroup) {
 	// Get all repos that the user owns
 	var repos []*github.Repository
 	var err error
+
 	if token != "" {
 		// Get private repos if we have a token
 		repos, _, err = client.Repositories.List(ctx, "", opt)
@@ -87,6 +96,9 @@ func getRepos(token, userName string, c chan string, wg *sync.WaitGroup) {
 		log.Fatal(err)
 	}
 
+	// Send length of bar to channel to use for ProgressBar
+	count <- len(repos)
+
 	// Add all repos to the channel
 	for _, repo := range repos {
 		c <- *repo.HTMLURL
@@ -98,7 +110,7 @@ func getRepos(token, userName string, c chan string, wg *sync.WaitGroup) {
 }
 
 // cloneRepos will clone all the repos in a given string slice of repo URLS
-func cloneRepos(repos chan string, dirName, token string, wg *sync.WaitGroup) {
+func cloneRepos(repos chan string, bar *progressbar.ProgressBar, dirName, token string, wg *sync.WaitGroup) {
 	// Create username dir to put all cloned repos in.
 	err := os.MkdirAll(dirName, os.ModePerm)
 
@@ -108,15 +120,16 @@ func cloneRepos(repos chan string, dirName, token string, wg *sync.WaitGroup) {
 
 	// Clone each repo in the channel
 	for repo := range repos {
-		go cloneWorker(repo, dirName, token, wg)
+		go cloneWorker(repo, dirName, token, wg, bar)
 	}
 }
 
 // cloneWorker will clone the given repository
-func cloneWorker(repo, dirName, token string, wg *sync.WaitGroup) {
-	fmt.Printf("[gobackup] cloning %s\n", repo)
+func cloneWorker(repo, dirName, token string, wg *sync.WaitGroup, bar *progressbar.ProgressBar) {
+	// fmt.Printf("[gobackup] cloning %s\n", repo)
 
 	// Decrement the waitgroup count when we are finished cloning the repository
+	defer bar.Add(1)
 	defer wg.Done()
 	// Get the name of the repo we are cloning
 	repoName := path.Base(repo)
@@ -137,9 +150,8 @@ func cloneWorker(repo, dirName, token string, wg *sync.WaitGroup) {
 	}
 	// Clone the repository
 	_, err := git.PlainClone(dirName, false, &git.CloneOptions{
-		Auth:     auth,
-		URL:      repo,
-		Progress: os.Stdout,
+		Auth: auth,
+		URL:  repo,
 	})
 
 	if err != nil {
