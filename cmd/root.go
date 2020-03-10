@@ -7,9 +7,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// If you want to have explicit logging when running commands.
+// Verbose is if you want to have explicit logging when running commands
 var Verbose bool
 
+// rootCmd is the hook into cobra
 var rootCmd = &cobra.Command{
 	Use:   "gobackup",
 	Short: "A simple CLI tool that backs up all your github repos to your local machine, and uploads them to another repo host like GitLab!",

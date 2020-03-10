@@ -27,7 +27,7 @@ TODO
 
 - [x] Clone a single repository to your computer through CLI.
 - [x] Clone multiple repositories to local computer
-- [ ] Clone multiple reposiories using concurrency
+- [x] Clone multiple reposiories using concurrency
 - [ ] Upload cloned repositories to other services like GitLab or BitBucket
 - [ ] Do the above concurrently
 - [ ] Do the reverse, pull repos from BitBucket / GitLab and clone them or upload them to GitHub. Ideally want to be platform agnostic.
