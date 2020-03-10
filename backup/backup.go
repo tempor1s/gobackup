@@ -81,7 +81,7 @@ func getRepos(token string, c chan string, wg *sync.WaitGroup) {
 		wg.Add(1)
 	}
 
-	// Close the channel, our other function will still be able to recieve what is already inside of it, and this prevents a deadlock
+	// Close the channel, our other function will still be able to receive what is already inside of it, and this prevents a deadlock
 	close(c)
 }
 
