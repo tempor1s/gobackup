@@ -25,7 +25,6 @@ func GitHub(token string, args []string) {
 	if token == "" {
 		// TODO: Support non-access token based request
 		fmt.Println("WARNING: Personal token was not passed in. Please pass in a token using --token - Support for NON-token download coming soon.")
-		return
 	}
 
 	// Get the URL to clone
@@ -39,7 +38,7 @@ func GitHub(token string, args []string) {
 	repos := make(chan string)
 	var wg sync.WaitGroup
 	// Get all repos for the user
-	go getRepos(token, repos, &wg)
+	go getRepos(token, dirName, repos, &wg)
 
 	// Clone all repos
 	cloneRepos(repos, dirName, token, &wg)
@@ -49,7 +48,7 @@ func GitHub(token string, args []string) {
 }
 
 // getRepos will get all the repos for a user
-func getRepos(token string, c chan string, wg *sync.WaitGroup) {
+func getRepos(token, userName string, c chan string, wg *sync.WaitGroup) {
 	// Set up OAuth token stuff
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(
@@ -57,8 +56,13 @@ func getRepos(token string, c chan string, wg *sync.WaitGroup) {
 	)
 	tc := oauth2.NewClient(ctx, ts)
 
-	// Create a new github client using the OAuth2 token
-	client := github.NewClient(tc)
+	// Create a new github client using the OAuth2 token or no token
+	var client *github.Client
+	if token != "" {
+		client = github.NewClient(tc)
+	} else {
+		client = github.NewClient(nil)
+	}
 
 	// Options for our request to GitHub. This will have the API only return repos that we own, and with no pagination
 	opt := &github.RepositoryListOptions{
@@ -69,7 +73,15 @@ func getRepos(token string, c chan string, wg *sync.WaitGroup) {
 	}
 
 	// Get all repos that the user owns
-	repos, _, err := client.Repositories.List(ctx, "", opt)
+	var repos []*github.Repository
+	var err error
+	if token != "" {
+		// Get private repos if we have a token
+		repos, _, err = client.Repositories.List(ctx, "", opt)
+	} else {
+		// Get only public repos if we have no token, allowing us to clone other peoples repos as well
+		repos, _, err = client.Repositories.List(ctx, userName, opt)
+	}
 
 	if err != nil {
 		log.Fatal(err)
@@ -110,12 +122,22 @@ func cloneWorker(repo, dirName, token string, wg *sync.WaitGroup) {
 	repoName := path.Base(repo)
 	// Dirname which will be <github_username>/<repo_name>
 	dirName = dirName + "/" + repoName
-	// Clone the repository
-	_, err := git.PlainClone(dirName+"/"+repoName, false, &git.CloneOptions{
-		Auth: &http.BasicAuth{
+
+	// Setup auth
+	var auth *http.BasicAuth
+	if token != "" {
+		// If we have a token
+		auth = &http.BasicAuth{
 			Username: "gobackup",
 			Password: token,
-		},
+		}
+	} else {
+		// If we have no token, we dont want to use any auth
+		auth = nil
+	}
+	// Clone the repository
+	_, err := git.PlainClone(dirName, false, &git.CloneOptions{
+		Auth:     auth,
 		URL:      repo,
 		Progress: os.Stdout,
 	})
