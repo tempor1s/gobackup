@@ -24,5 +24,5 @@ var backupCommand = &cobra.Command{
 
 // backupCmd just allows us to hook into our backup module
 func backupCmd(cmd *cobra.Command, args []string) {
-	backup.GitHub(Token, args)
+	backup.Start(Token, args)
 }
