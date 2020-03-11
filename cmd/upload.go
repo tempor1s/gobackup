@@ -11,9 +11,9 @@ func init() {
 
 // uploadCommand is the command register for backing up repos
 var uploadCommand = &cobra.Command{
-	Use:   "upload [platform] [username]",
-	Short: "Upload all the repos in the current folder to the platform of your choice.",
-	Long:  "This command will upload all of the repositories that are in your current directory to an account on another platform. Make sure you know what you are doing before you use this!",
+	Use:   "upload [platform] [directory]",
+	Short: "Upload all the repos in the given directory to the platform of your choice.",
+	Long:  "This command will upload all of the repositories that are in the given directory to an account on another platform. Make sure you know what you are doing before you use this!",
 	// Run the backup command
 	Run: uploadCmd,
 }

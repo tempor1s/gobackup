@@ -13,21 +13,20 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/http"
 )
 
-// TODO: Change username to just be directory - internally we can still just use the username for backup command and such
-// Start will start the upload process of all repos in the "username" directory
+// Start will start the upload process of all repos in the "directory" directory
 func Start(token string, args []string) {
-	// Need service provider & username
+	// Need service provider & directory
 	if len(args) == 0 {
 		fmt.Println("Please pass the provider that you want to upload to. (github/gitlab) Example: `upload github`")
 		return
 	} else if len(args) == 1 {
-		fmt.Println("Please pass in the username that you would like to upload to. Example: `upload github tempor1s`")
+		fmt.Println("Please pass in the directory that you would like to upload to. Example: `upload github directory`")
 		return
 	}
 
 	// We need a token for uploading to a service
 	if token == "" {
-		fmt.Println("For uploading to Github you need to provide a personal access token using --token. Example: `upload github tempor1s --token=123asd`")
+		fmt.Println("For uploading to Github you need to provide a personal access token using --token. Example: `upload github directory --token=123asd`")
 		return
 	}
 
@@ -40,13 +39,13 @@ func Start(token string, args []string) {
 	}
 }
 
-// gitHub will allow you to upload all repos in the "username" directory into the github repo that is associated with your personal access token
-func gitHub(token, username string) {
+// gitHub will allow you to upload all repos in the given directory into the github repo that is associated with your personal access token
+func gitHub(token, directory string) {
 	// TODO
 }
 
-// gitLab will allow you to upload all repos in the "username" directory into the gitlab repo that is associated with your personal access token
-func gitLab(token, username string) {
+// gitLab will allow you to upload all repos in the given directory into the gitlab repo that is associated with your personal access token
+func gitLab(token, directory string) {
 	// Create a new gitlab client that will be our hook into the GitLab api
 	client := gitlab.NewClient(nil, token)
 	var wg sync.WaitGroup
@@ -54,11 +53,11 @@ func gitLab(token, username string) {
 	// Create a channel to keep all our repos
 	repoChan := make(chan string)
 
-	go getDirNames(username, repoChan, &wg)
+	go getDirNames(directory, repoChan, &wg)
 
-	// Loop through all repos in the username directory and upload them all to GitLab as new projects
+	// Loop through all repos in the directory directory and upload them all to GitLab as new projects
 	for repoName := range repoChan {
-		go uploadRepos(username, repoName, token, client, &wg)
+		go uploadRepos(directory, repoName, token, client, &wg)
 	}
 
 	wg.Wait()
@@ -67,11 +66,11 @@ func gitLab(token, username string) {
 }
 
 // uploadRepos is designed to be a concurrent worker that will upload the current repo
-func uploadRepos(username, repoName, token string, client *gitlab.Client, wg *sync.WaitGroup) {
+func uploadRepos(directory, repoName, token string, client *gitlab.Client, wg *sync.WaitGroup) {
 	// Decrease the waitgroup after we are done uploading the current repo because we are done with all work
 	defer wg.Done()
 	// The path to the repo, exa: tempor1s/gobackup
-	path := username + "/" + repoName
+	path := directory + "/" + repoName
 
 	// Create a new project with the name of the current directory (the repo)
 	project := createProject(client, repoName)
@@ -84,10 +83,7 @@ func uploadRepos(username, repoName, token string, client *gitlab.Client, wg *sy
 
 // getDirNames will get all directories in a given repo and send them to a given channel
 func getDirNames(dir string, repoNames chan string, wg *sync.WaitGroup) {
-	// TODO: Only grab directories - ignore files
-	// TODO: Speed directories get up
-
-	// Get all the directories within the username directory
+	// Get all the directories within the directory directory
 	directories, err := ioutil.ReadDir(dir)
 	if err != nil {
 		log.Fatal(err)
@@ -96,8 +92,10 @@ func getDirNames(dir string, repoNames chan string, wg *sync.WaitGroup) {
 	// Loop through all the directories thqat we read
 	for _, directory := range directories {
 		// Add the directory to our channel and increase the WaitGroup
-		repoNames <- directory.Name()
-		wg.Add(1)
+		if directory.IsDir() {
+			repoNames <- directory.Name()
+			wg.Add(1)
+		}
 	}
 
 	// Close the channel after we add all the names, other functions will still be able to access it :)
@@ -107,6 +105,7 @@ func getDirNames(dir string, repoNames chan string, wg *sync.WaitGroup) {
 // createProject will create a new gitlab project with a given name, and then return it
 func createProject(client *gitlab.Client, name string) *gitlab.Project {
 	// TODO: Do something different with description
+	// TODO: Respect visability of the repo we cloned
 	// Options for our new project (repo)
 	opt := &gitlab.CreateProjectOptions{
 		Name:                 gitlab.String(name),
