@@ -30,7 +30,7 @@ TODO
 - [x] Clone multiple reposiories using concurrency
 - [x] Add support for cloning GitLab repos
 - [x] Upload cloned repositories to GitLab 
-- [ ] Do the above concurrently
+- [x] Do the above concurrently
 - [ ] Do the reverse, upload cloned repositories to GitHub
 - [ ] Do the above concurrently
 - [ ] Respect the privacy status of a cloned repo when we upload it again

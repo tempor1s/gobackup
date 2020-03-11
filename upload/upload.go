@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"sync"
 
 	"github.com/xanzy/go-gitlab"
+
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/http"
@@ -35,43 +37,74 @@ func Start(token string, args []string) {
 	}
 }
 
-// gitHub will allow you to upload all github repos in the "username" directory into the github repo that is associated with your personal access token
+// gitHub will allow you to upload all repos in the "username" directory into the github repo that is associated with your personal access token
 func gitHub(token, username string) {
 	// TODO
 }
 
-// gitLab will allow you to upload all gitlab repos in the "username" directory into the gitlab repo that is associated with your personal access token
+// gitLab will allow you to upload all repos in the "username" directory into the gitlab repo that is associated with your personal access token
 func gitLab(token, username string) {
 	// Create a new gitlab client that will be our hook into the GitLab api
 	client := gitlab.NewClient(nil, token)
+	var wg sync.WaitGroup
+
+	// Create a channel to keep all our repos
+	repoChan := make(chan string)
+
+	go getDirNames(username, repoChan, &wg)
+
+	// Loop through all repos in the username directory and upload them all to GitLab as new projects
+	for repoName := range repoChan {
+		go uploadRepos(username, repoName, token, client, &wg)
+	}
+
+	wg.Wait()
+
+	fmt.Println("Upload Complete")
+}
+
+// uploadRepos is designed to be a concurrent worker that will upload the current repo
+func uploadRepos(username, repoName, token string, client *gitlab.Client, wg *sync.WaitGroup) {
+	// Decrease the waitgroup after we are done uploading the current repo because we are done with all work
+	defer wg.Done()
+	// The path to the repo, exa: tempor1s/gobackup
+	path := username + "/" + repoName
+
+	// Create a new project with the name of the current directory (the repo)
+	project := createProject(client, repoName)
+
+	// If the project already exists, we dont wanna do anything to it. Otherwise, create remote and push to the new project
+	if project != nil {
+		createRemoteAndPush(path, token, project)
+	}
+}
+
+// getDirNames will get all directories in a given repo and send them to a given channel
+func getDirNames(dir string, repoNames chan string, wg *sync.WaitGroup) {
+	// TODO: Only grab directories - ignore files
+	// TODO: Speed directories get up
+
 	// Get all the directories within the username directory
-	directories, err := ioutil.ReadDir(username)
-
-	repoNames := []string{}
-
+	directories, err := ioutil.ReadDir(dir)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Double for loop here right now is gross, but will give us less work in the future when we make this concurrent
+	// Loop through all the directories thqat we read
 	for _, directory := range directories {
-		repoNames = append(repoNames, directory.Name())
+		// Add the directory to our channel and increase the WaitGroup
+		repoNames <- directory.Name()
+		wg.Add(1)
 	}
 
-	// Loop through all repos in the username directory and upload them all to GitLab as new projects
-	for _, repoName := range repoNames {
-		path := username + "/" + repoName
-
-		project := createProject(client, repoName)
-
-		if project != nil {
-			createRemoteAndPush(path, token, project)
-		}
-	}
-
+	// Close the channel after we add all the names, other functions will still be able to access it :)
+	close(repoNames)
 }
 
+// createProject will create a new gitlab project with a given name, and then return it
 func createProject(client *gitlab.Client, name string) *gitlab.Project {
+	// TODO: Do something different with description
+	// Options for our new project (repo)
 	opt := &gitlab.CreateProjectOptions{
 		Name:                 gitlab.String(name),
 		Description:          gitlab.String("Placeholder"),
@@ -80,8 +113,10 @@ func createProject(client *gitlab.Client, name string) *gitlab.Project {
 		Visibility:           gitlab.Visibility(gitlab.PublicVisibility),
 	}
 
+	// Create the new project
 	project, _, err := client.Projects.CreateProject(opt)
 
+	// If the repo already exists, just tell the user and move on
 	if err != nil {
 		log.Println(err)
 		return nil
@@ -90,6 +125,7 @@ func createProject(client *gitlab.Client, name string) *gitlab.Project {
 	return project
 }
 
+// createRemoteAndPush will create a new remote to the backup repository and then push the code to that remote (gitlab repo we create above)
 func createRemoteAndPush(path, token string, project *gitlab.Project) {
 	r, err := git.PlainOpen(path)
 
@@ -109,16 +145,19 @@ func createRemoteAndPush(path, token string, project *gitlab.Project) {
 		Password: token,
 	}
 
+	// Push to the remote we just created and use the auth we created above
 	p := &git.PushOptions{
 		RemoteName: "backup",
 		Auth:       auth,
 	}
 
+	// Push all the code in our repo to the remote that we just created
 	err = r.Push(p)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// TODO: We can remove this when we create a progress bar
 	fmt.Printf("New Project was created and pushed with the name %s\n", project.Name)
 }

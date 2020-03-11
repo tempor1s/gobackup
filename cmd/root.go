@@ -29,7 +29,7 @@ var rootCmd = &cobra.Command{
 func Execute() {
 	// Global Flags
 	rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "Verbose output mode")
-	rootCmd.PersistentFlags().StringVarP(&Token, "token", "t", "", "Your personal access token. You need this to be able to upload your repos and clone private ones.")
+	rootCmd.PersistentFlags().StringVarP(&Token, "token", "t", "", "Your personal access token. You need to provide this to be able to upload your repos and clone private ones.")
 
 	// Execute Command
 	if err := rootCmd.Execute(); err != nil {
