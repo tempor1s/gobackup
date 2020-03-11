@@ -29,8 +29,9 @@ TODO
 - [x] Clone multiple repositories to local computer
 - [x] Clone multiple reposiories using concurrency
 - [x] Add support for cloning GitLab repos
-- [ ] Upload cloned repositories to other services like GitLab
+- [x] Upload cloned repositories to GitLab 
 - [ ] Do the above concurrently
-- [ ] Do the reverse, be able to upload to any platform.
+- [ ] Do the reverse, upload cloned repositories to GitHub
+- [ ] Do the above concurrently
 - [ ] Respect the privacy status of a cloned repo when we upload it again
 - [ ] Set up Cron Job to periodically backup new repos / changes to old repos to local / other service like GitLab or BitBucket
