@@ -7,7 +7,6 @@ import (
 
 func init() {
 	rootCmd.AddCommand(uploadCommand)
-	downloadCommand.Flags().StringVarP(&Token, "token", "t", "", "Your personal access token. Needed to be able to upload to a repository...")
 }
 
 // uploadCommand is the command register for backing up repos

@@ -7,7 +7,6 @@ import (
 
 func init() {
 	rootCmd.AddCommand(downloadCommand)
-	downloadCommand.Flags().StringVarP(&Token, "token", "t", "", "Your personal access token. Needed to be able to clone private repos.")
 }
 
 // downloadCommand is the command register for backing up repos
