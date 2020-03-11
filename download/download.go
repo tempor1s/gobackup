@@ -1,4 +1,4 @@
-package backup
+package download
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 // Start will start the command, handle arguments, and dispatch the correct handler
 func Start(token string, args []string) {
 	if len(args) == 0 {
-		fmt.Println("Please pass the provider that you want to clone from. (github/gitlab/bitbucket) Example: `backup github`")
+		fmt.Println("Please pass the provider that you want to clone from. (github/gitlab) Example: `backup github`")
 		return
 	} else if len(args) == 1 {
 		fmt.Println("Please pass in the username that you would like to clone from. Example: `backup github tempor1s`")
