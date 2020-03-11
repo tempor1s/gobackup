@@ -70,6 +70,7 @@ func getGithubRepos(token, username string, repoChan chan string, totalRepos cha
 	close(repoChan)
 }
 
+// getGitlabRepos will get all of a users gitlab repos
 func getGitlabRepos(token, username string, repoChan chan string, totalRepos chan int, wg *sync.WaitGroup) {
 	// Create a new Gitlab client with our token to make requests
 	client := gitlab.NewClient(nil, token)

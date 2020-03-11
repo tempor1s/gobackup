@@ -29,8 +29,6 @@ func Start(token string, args []string) {
 		gitHub(token, args[1])
 	case "gitlab":
 		gitLab(token, args[1])
-	case "bitbucket":
-		bitBucket(token, args[1])
 	}
 }
 
@@ -96,10 +94,4 @@ func gitLab(token string, username string) {
 	size := getDirSizeStr(username)
 
 	fmt.Printf("\n\nCloning repos complete. Cloned %d repos from GitLab with a total size of %s\n", repoCount, size)
-}
-
-// bitBucket will clone all of a users bitbucket repos to your local machine. Puts them in a <bitbucket_username>/ folder.
-func bitBucket(token string, username string) {
-	// TODO
-	fmt.Println("Coming soon!")
 }
