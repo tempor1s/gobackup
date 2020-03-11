@@ -16,6 +16,7 @@ import (
 // TODO: Change username to just be directory - internally we can still just use the username for backup command and such
 // Start will start the upload process of all repos in the "username" directory
 func Start(token string, args []string) {
+	// Need service provider & username
 	if len(args) == 0 {
 		fmt.Println("Please pass the provider that you want to upload to. (github/gitlab) Example: `upload github`")
 		return
@@ -24,11 +25,13 @@ func Start(token string, args []string) {
 		return
 	}
 
+	// We need a token for uploading to a service
 	if token == "" {
 		fmt.Println("For uploading to Github you need to provide a personal access token using --token. Example: `upload github tempor1s --token=123asd`")
 		return
 	}
 
+	// Do different things based off of the platform they want to use
 	switch args[0] {
 	case "github":
 		gitHub(token, args[1])
@@ -127,17 +130,27 @@ func createProject(client *gitlab.Client, name string) *gitlab.Project {
 
 // createRemoteAndPush will create a new remote to the backup repository and then push the code to that remote (gitlab repo we create above)
 func createRemoteAndPush(path, token string, project *gitlab.Project) {
+	// Open the github repo at our current path
 	r, err := git.PlainOpen(path)
-
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Create a new remote to push to so that we maintain the old URL
-	r.CreateRemote(&config.RemoteConfig{
-		Name: "backup",
-		URLs: []string{project.HTTPURLToRepo},
-	})
+	// Check to see if our backup remote exists
+	remoteExists, err := r.Remote("backup")
+
+	if err != nil {
+		fmt.Println("Remote does not exist... Creating..")
+	}
+
+	// Only create a new remote if one does not already exist - this will future proof for doing backups to existing repos
+	if remoteExists == nil {
+		// Create a new remote to push to so that we maintain the old URL
+		r.CreateRemote(&config.RemoteConfig{
+			Name: "backup",
+			URLs: []string{project.HTTPURLToRepo},
+		})
+	}
 
 	// Create auth with other token
 	auth := &http.BasicAuth{
