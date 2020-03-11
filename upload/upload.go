@@ -6,6 +6,7 @@ import (
 	"log"
 	"sync"
 
+	"github.com/schollz/progressbar/v2"
 	"github.com/xanzy/go-gitlab"
 
 	"gopkg.in/src-d/go-git.v4"
@@ -48,27 +49,39 @@ func gitHub(token, directory string) {
 func gitLab(token, directory string) {
 	// Create a new gitlab client that will be our hook into the GitLab api
 	client := gitlab.NewClient(nil, token)
-	var wg sync.WaitGroup
 
 	// Create a channel to keep all our repos
 	repoChan := make(chan string)
+	repoCountChan := make(chan int)
+	var wg sync.WaitGroup
 
-	go getDirNames(directory, repoChan, &wg)
+	// Get all the directory names in the given directory
+	go getDirNames(directory, repoChan, repoCountChan, &wg)
+
+	repoCount := <-repoCountChan
+
+	if repoCount == 0 {
+		log.Fatal("Error; no repos found to upload")
+	}
+
+	// Build basic progress bar with the amount of repos that we have
+	bar := progressbar.NewOptions(repoCount, progressbar.OptionSetRenderBlankState(true))
 
 	// Loop through all repos in the directory directory and upload them all to GitLab as new projects
 	for repoName := range repoChan {
-		go uploadRepos(directory, repoName, token, client, &wg)
+		go uploadRepos(directory, repoName, token, client, &wg, bar)
 	}
 
 	wg.Wait()
 
-	fmt.Println("Upload Complete")
+	fmt.Printf("\nUpload Complete\n")
 }
 
 // uploadRepos is designed to be a concurrent worker that will upload the current repo
-func uploadRepos(directory, repoName, token string, client *gitlab.Client, wg *sync.WaitGroup) {
-	// Decrease the waitgroup after we are done uploading the current repo because we are done with all work
+func uploadRepos(directory, repoName, token string, client *gitlab.Client, wg *sync.WaitGroup, bar *progressbar.ProgressBar) {
+	// Decrease the waitgroup after we are done uploading the current repo because we are done with all work and increment loading bar
 	defer wg.Done()
+	defer bar.Add(1)
 	// The path to the repo, exa: tempor1s/gobackup
 	path := directory + "/" + repoName
 
@@ -82,12 +95,15 @@ func uploadRepos(directory, repoName, token string, client *gitlab.Client, wg *s
 }
 
 // getDirNames will get all directories in a given repo and send them to a given channel
-func getDirNames(dir string, repoNames chan string, wg *sync.WaitGroup) {
+func getDirNames(dir string, repoNames chan string, repoCountChan chan int, wg *sync.WaitGroup) {
 	// Get all the directories within the directory directory
 	directories, err := ioutil.ReadDir(dir)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	//TODO: Handle this length also counting files
+	repoCountChan <- len(directories)
 
 	// Loop through all the directories thqat we read
 	for _, directory := range directories {
@@ -116,13 +132,7 @@ func createProject(client *gitlab.Client, name string) *gitlab.Project {
 	}
 
 	// Create the new project
-	project, _, err := client.Projects.CreateProject(opt)
-
-	// If the repo already exists, just tell the user and move on
-	if err != nil {
-		log.Println(err)
-		return nil
-	}
+	project, _, _ := client.Projects.CreateProject(opt)
 
 	return project
 }
@@ -136,11 +146,7 @@ func createRemoteAndPush(path, token string, project *gitlab.Project) {
 	}
 
 	// Check to see if our backup remote exists
-	remoteExists, err := r.Remote("backup")
-
-	if err != nil {
-		fmt.Println("Remote does not exist... Creating..")
-	}
+	remoteExists, _ := r.Remote("backup")
 
 	// Only create a new remote if one does not already exist - this will future proof for doing backups to existing repos
 	if remoteExists == nil {
@@ -169,7 +175,4 @@ func createRemoteAndPush(path, token string, project *gitlab.Project) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	// TODO: We can remove this when we create a progress bar
-	fmt.Printf("New Project was created and pushed with the name %s\n", project.Name)
 }
