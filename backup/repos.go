@@ -4,11 +4,16 @@ import (
 	"context"
 	"os"
 	"path"
+	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/google/go-github/github"
+	"github.com/xanzy/go-gitlab"
+
 	"github.com/schollz/progressbar/v2"
 	"golang.org/x/oauth2"
+
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport/http"
 )
@@ -52,16 +57,37 @@ func getGithubRepos(token, username string, repoChan chan string, totalRepos cha
 	}
 	checkIfError(err)
 
-	// Send length of bar to channel to use for ProgressBar
+	// Send repo count to chanel to use for ProgressBar
 	totalRepos <- len(repos)
 
-	// Add all repos to the channel
+	// Add all repos to the channel and increment WaitGroup
 	for _, repo := range repos {
 		repoChan <- *repo.HTMLURL
 		wg.Add(1)
 	}
 
-	// Close repo list chanel, our other function will still be able to receive what is already inside of it, and this prevents a deadlock or infinite loop
+	// Close repo list channel, our other function will still be able to receive what is already inside of it, and this prevents a deadlock or infinite loop
+	close(repoChan)
+}
+
+func getGitlabRepos(token, username string, repoChan chan string, totalRepos chan int, wg *sync.WaitGroup) {
+	// Create a new Gitlab client with our token to make requests
+	client := gitlab.NewClient(nil, token)
+
+	// Get all the repos for a user
+	repos, _, err := client.Projects.ListUserProjects(username, nil)
+	checkIfError(err)
+
+	// Send repo count to chanel to use for ProgressBar
+	totalRepos <- len(repos)
+
+	// Add all repo urls to the channel and increment WaitGroup
+	for _, repo := range repos {
+		repoChan <- repo.HTTPURLToRepo
+		wg.Add(1)
+	}
+
+	// Close repo list channel, our other functions will still be able to receive what is already inside of it, and this prevents a deadlock or infite loop
 	close(repoChan)
 }
 
@@ -86,6 +112,8 @@ func cloneWorker(repo, dirName, token string, wg *sync.WaitGroup, bar *progressb
 	defer wg.Done()
 	// Get the name of the repo we are cloning
 	repoName := path.Base(repo)
+
+	repoName = strings.TrimSuffix(repoName, filepath.Ext(repoName))
 	// Dirname which will be <github_username>/<repo_name>
 	dirName = dirName + "/" + repoName
 

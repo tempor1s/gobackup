@@ -37,32 +37,65 @@ func Start(token string, args []string) {
 // gitHub will clone all of a users github repos to your local machine. Puts them in a <github_username>/ folder.
 func gitHub(token string, username string) {
 	// Start timer, create wait group so we dont exit early, and create channel for URL's
-	repos := make(chan string)
-	repoChan := make(chan int)
+	reposChan := make(chan string)
+	repoCountChan := make(chan int)
 	var wg sync.WaitGroup
 
 	// Get all repos for the user
-	go getGithubRepos(token, username, repos, repoChan, &wg)
+	go getGithubRepos(token, username, reposChan, repoCountChan, &wg)
 
-	// Get length of repos for the max of our progress bar
-	repoCount := <-repoChan
+	// Get length of repos for the max of our progress bar & check to make sure that repos exist
+	repoCount := <-repoCountChan
+
+	if repoCount == 0 {
+		fmt.Println("Error; no repos found")
+		return
+	}
+
+	// Build basic progress bar with the amount of repos that we have
 	bar := progressbar.NewOptions(repoCount, progressbar.OptionSetRenderBlankState(true))
 
 	// Clone all repos
-	cloneRepos(repos, bar, username, token, &wg)
+	cloneRepos(reposChan, bar, username, token, &wg)
 	// Wait until all repos have been cloned before printing time and exiting
 	wg.Wait()
 
 	// Get the total size of all the cloned directories and print information
 	size := getDirSizeStr(username)
 
-	fmt.Printf("\n\nCloning repos complete. Cloned %d repos with a total size of %s\n", repoCount+1, size)
+	fmt.Printf("\n\nCloning repos complete. Cloned %d repos from GitHub with a total size of %s\n", repoCount+1, size)
 }
 
 // gitLab will clone all of a users gitlab repos to your local machine. Puts them in a <gitlab_username>/ folder.
 func gitLab(token string, username string) {
-	// TODO
-	fmt.Println("Coming soon!")
+	reposChan := make(chan string)
+	repoCountChan := make(chan int)
+	var wg sync.WaitGroup
+
+	// Get all repos for a user
+	go getGitlabRepos(token, username, reposChan, repoCountChan, &wg)
+
+	// Get length of repos for the max of our progress bar & check to make sure that repos exist
+	repoCount := <-repoCountChan
+
+	if repoCount == 0 {
+		fmt.Println("Error; no repos found")
+		return
+	}
+
+	// Build basic progress bar with the amount of repos that we have
+	bar := progressbar.NewOptions(repoCount, progressbar.OptionSetRenderBlankState(true))
+
+	// Clone all repos
+	cloneRepos(reposChan, bar, username, token, &wg)
+
+	// Wait until all repos have been cloned before printing time and exiting
+	wg.Wait()
+
+	// Get the total size of all the cloned directories and print information
+	size := getDirSizeStr(username)
+
+	fmt.Printf("\n\nCloning repos complete. Cloned %d repos from GitLab with a total size of %s\n", repoCount, size)
 }
 
 // bitBucket will clone all of a users bitbucket repos to your local machine. Puts them in a <bitbucket_username>/ folder.

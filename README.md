@@ -2,7 +2,7 @@
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/tempor1s/gobackup)](https://goreportcard.com/report/github.com/tempor1s/gobackup)
 
-A tool that allows you to backup all your GitHub repos onto your local machine, and even upload them to a different repo manager, like GitLab!
+A tool that allows you to backup all your GitHub, GitLab & BitBucket repos onto your local machine, and even upload them to a different repo manager!
 
 ### Table of Contents
 
@@ -28,7 +28,7 @@ TODO
 - [x] Clone a single repository to your computer through CLI.
 - [x] Clone multiple repositories to local computer
 - [x] Clone multiple reposiories using concurrency
-- [ ] Add support for cloning GitLab repos
+- [x] Add support for cloning GitLab repos
 - [ ] Add support for cloning BitBucket repos
 - [ ] Upload cloned repositories to other services like GitLab or BitBucket
 - [ ] Do the above concurrently
