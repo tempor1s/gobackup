@@ -10,6 +10,9 @@ import (
 // Verbose is if you want to have explicit logging when running commands
 var Verbose bool
 
+// Token is your personal access token for a specific platform
+var Token string
+
 // rootCmd is the hook into cobra
 var rootCmd = &cobra.Command{
 	Use:   "gobackup",
