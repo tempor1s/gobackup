@@ -26,7 +26,7 @@ func gitHub(token, directory string) {
 
 	client := github.NewClient(tc)
 
-	// Create a channel to keep all our repos
+	// Channel and WaitGroup setup because we use concurrency
 	repoChan := make(chan string)
 	repoCountChan := make(chan int)
 	var wg sync.WaitGroup
@@ -45,7 +45,7 @@ func gitHub(token, directory string) {
 
 	// Loop through all repos in the directory directory and upload them all to GitLab as new projects
 	for repoName := range repoChan {
-		go uploadGithubRepos(directory, repoName, token, client, &wg, bar, ctx)
+		go uploadGithubRepos(ctx, directory, repoName, token, client, &wg, bar)
 	}
 
 	wg.Wait()
@@ -53,26 +53,30 @@ func gitHub(token, directory string) {
 	fmt.Printf("\nUpload Complete - Uploaded %d repos to GitHub.\n", repoCount)
 }
 
-func uploadGithubRepos(directory, repoName, token string, client *github.Client, wg *sync.WaitGroup, bar *progressbar.ProgressBar, ctx context.Context) {
+func uploadGithubRepos(ctx context.Context, directory, repoName, token string, client *github.Client, wg *sync.WaitGroup, bar *progressbar.ProgressBar) {
+	// Decrease WaitGroup and increase bar after the repo is uploaded
 	defer wg.Done()
 	defer bar.Add(1)
 
 	// The path to the repo, exa: tempor1s/gobackup
 	path := directory + "/" + repoName
 
+	// Create the new github repo
 	repo := createRepo(ctx, client, repoName)
 
-	if repo != "" {
-		createGithubRemotePush(path, token, repo)
-	}
+	// Create remote and push to github
+	createGithubRemotePush(path, token, repo)
 }
 
+// createRepo will create a new GitHub repo with the provided repoName
 func createRepo(ctx context.Context, client *github.Client, repoName string) string {
 	isPrivate := false
 	repoDescription := ""
 
+	// Get the currently authenticated user
 	user, _, err := client.Users.Get(ctx, "")
 
+	// Settings for the repo that we are going to create
 	r := &github.Repository{Name: &repoName, Private: &isPrivate, Description: &repoDescription}
 
 	// Delete old repo and then create a new one
@@ -87,9 +91,11 @@ func createRepo(ctx context.Context, client *github.Client, repoName string) str
 		log.Fatal(err)
 	}
 
+	// This means the repo already exists, so we just want to find the one that exists
 	return user.GetHTMLURL() + "/" + repoName
 }
 
+// createGithubRemotePush will create a new 'backup' remote with the repo that we just created, and then push the repo at the path to it
 func createGithubRemotePush(path, token, repoURL string) {
 	// Open the github repo at our current path
 	r, err := git.PlainOpen(path)

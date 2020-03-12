@@ -39,9 +39,10 @@ func gitLab(token, directory string) {
 		go uploadGitlabRepos(directory, repoName, token, client, &wg, bar)
 	}
 
+	// Wait for all GoRoutines to be done
 	wg.Wait()
 
-	fmt.Printf("\nUpload Complete\n")
+	fmt.Printf("\nUpload Complete - Uploaded %d repos to GitLab.\n", repoCount)
 }
 
 // uploadGitlabRepos is designed to be a concurrent worker that will upload the current repo

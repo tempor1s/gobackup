@@ -18,6 +18,7 @@ var uploadCommand = &cobra.Command{
 	Run: uploadCmd,
 }
 
+// uploadCmd will start the upload process
 func uploadCmd(cmd *cobra.Command, args []string) {
 	upload.Start(Token, args)
 }

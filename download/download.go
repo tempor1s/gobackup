@@ -9,16 +9,18 @@ import (
 
 // Start will start the command, handle arguments, and dispatch the correct handler
 func Start(token string, args []string) {
+	// Make sure they pass in a platform and a directory
 	if len(args) == 0 {
-		fmt.Println("Please pass the provider that you want to clone from. (github/gitlab) Example: `backup github`")
+		fmt.Println("Please pass the provider that you want to clone from. (github/gitlab) Example: `backup download github`")
 		return
 	} else if len(args) == 1 {
-		fmt.Println("Please pass in the username that you would like to clone from. Example: `backup github tempor1s`")
+		fmt.Println("Please pass in the username that you would like to clone from. Example: `backup download github tempor1s`")
 		return
 	}
 
+	// Warn the user if no personal token was provided
 	if token == "" {
-		fmt.Println("WARNING: Personal token was not passed in, only cloning public repos. If you want to clone private repos, please supply a token using --token")
+		fmt.Println("WARNING: Personal token was not provided, only cloning public repos. If you want to clone private repos, please supply a token using --token")
 	}
 
 	fmt.Printf("Backing up your repos... Please wait - Don't worry if the bar freezes, this could take a few minutes :)\n\n")

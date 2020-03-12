@@ -21,6 +21,8 @@ func Start(token string, args []string) {
 		return
 	}
 
+	fmt.Printf("Backing up your repos... Please wait - Don't worry if the bar freezes, this could take a few minutes :)\n\n")
+
 	// Do different things based off of the platform they want to use
 	switch args[0] {
 	case "github":
