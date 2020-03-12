@@ -28,12 +28,12 @@ if you want to clone ALL your repos on GitHub and upload them to gitlab, you are
 - GitHub Personal Access Token
 You can create a GitHub token [here.](https://github.com/settings/tokens/new)
 
-<img src="docs/media/github.png" alt="Personal Access Token Permissions" title="Github Personal Access Token">
+<img src="docs/media/github_permissions.png" alt="Personal Access Token Permissions" title="Github Personal Access Token">
 
 - GitLab Personal Access Token
 You can create a GitLab token [here.](https://gitlab.com/profile/personal_access_tokens)
 
-<img src="docs/media/gitlab.png" alt="Personal Access Token Permissions" title="Gitlab Personal Access Token">
+<img src="docs/media/gitlab_permissions.png" alt="Personal Access Token Permissions" title="Gitlab Personal Access Token">
 
 ```bash
 # clone all the repos to your local machine. --token is optional, but you need it to clone private repositories - token is not required
