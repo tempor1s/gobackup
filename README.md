@@ -31,8 +31,8 @@ TODO
 - [x] Add support for cloning GitLab repos
 - [x] Upload cloned repositories to GitLab 
 - [x] Do the above concurrently
-- [ ] Do the reverse, upload cloned repositories to GitHub
-- [ ] Do the above concurrently
+- [x] Do the reverse, upload cloned repositories to GitHub
+- [x] Do the above concurrently
 - [ ] Add backup command that will download the repo to memory (or disk I guess) and then instant upload it to new platform of choice
 - [ ] Respect the privacy status of a cloned repo when we upload it again
 - [ ] Set up Cron Job to periodically backup new repos / changes to old repos to local / other service like GitLab

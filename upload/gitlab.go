@@ -36,7 +36,7 @@ func gitLab(token, directory string) {
 
 	// Loop through all repos in the directory directory and upload them all to GitLab as new projects
 	for repoName := range repoChan {
-		go uploadRepos(directory, repoName, token, client, &wg, bar)
+		go uploadGitlabRepos(directory, repoName, token, client, &wg, bar)
 	}
 
 	wg.Wait()
@@ -44,8 +44,8 @@ func gitLab(token, directory string) {
 	fmt.Printf("\nUpload Complete\n")
 }
 
-// uploadRepos is designed to be a concurrent worker that will upload the current repo
-func uploadRepos(directory, repoName, token string, client *gitlab.Client, wg *sync.WaitGroup, bar *progressbar.ProgressBar) {
+// uploadGitlabRepos is designed to be a concurrent worker that will upload the current repo
+func uploadGitlabRepos(directory, repoName, token string, client *gitlab.Client, wg *sync.WaitGroup, bar *progressbar.ProgressBar) {
 	// Decrease the waitgroup after we are done uploading the current repo because we are done with all work and increment loading bar
 	defer wg.Done()
 	defer bar.Add(1)
@@ -57,7 +57,7 @@ func uploadRepos(directory, repoName, token string, client *gitlab.Client, wg *s
 
 	// If the project already exists, we dont wanna do anything to it. Otherwise, create remote and push to the new project
 	if project != nil {
-		createRemoteAndPush(path, token, project)
+		createGitlabRemotePush(path, token, project)
 	}
 }
 
@@ -80,8 +80,8 @@ func createProject(client *gitlab.Client, name string) *gitlab.Project {
 	return project
 }
 
-// createRemoteAndPush will create a new remote to the backup repository and then push the code to that remote (gitlab repo we create above)
-func createRemoteAndPush(path, token string, project *gitlab.Project) {
+// createGitlabRemoteAndPush will create a new remote to the backup repository and then push the code to that remote (gitlab repo we create above)
+func createGitlabRemotePush(path, token string, project *gitlab.Project) {
 	// Open the github repo at our current path
 	r, err := git.PlainOpen(path)
 	if err != nil {
