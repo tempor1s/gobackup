@@ -4,15 +4,9 @@
 
 A tool that allows you to backup all your GitHub, GitLab repos onto your local machine, and even upload them to a different repo manager!
 
-### Table of Contents
-
-1. [Installation]("#installation")
-2. [Usage]("#usage")
-3. [Milestones]("#milestones")
-
 ## Installation
 
-A quick guide on how to install the tool. Not currently available.
+A quick guide on how to install the tool.
 
 ```bash
 brew tap tempor1s/gobackup
