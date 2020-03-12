@@ -3,17 +3,10 @@ module github.com/tempor1s/gobackup
 go 1.14
 
 require (
-	github.com/fatih/color v1.9.0 // indirect
 	github.com/golang/protobuf v1.3.4 // indirect
 	github.com/google/go-github v17.0.0+incompatible
-	github.com/google/go-querystring v1.0.0 // indirect
-	github.com/k0kubun/pp v3.0.1+incompatible // indirect
-	github.com/kr/pretty v0.2.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/mattn/go-colorable v0.1.6 // indirect
-	github.com/mattn/go-runewidth v0.0.8 // indirect
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
-	github.com/schollz/progressbar v1.0.0 // indirect
 	github.com/schollz/progressbar/v2 v2.15.0
 	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/spf13/cobra v0.0.6
