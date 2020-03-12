@@ -49,7 +49,7 @@ Thats it! All your repos should now be backed to your chosen platform, and you c
 - [x] Do the above concurrently
 - [x] Do the reverse, upload cloned repositories to GitHub
 - [x] Do the above concurrently
-- [ ] Deployment!
-- [ ] Add backup command that will download the repo to memory (or disk I guess) and then instant upload it to new platform of choice
+- [x] Deployment!
+- [ ] Add backup command that will download the repo to memory (or disk I guess) and then instant upload it to new platform of choice (combining upload/download)
 - [ ] Respect the privacy status of a cloned repo when we upload it again
 - [ ] Set up Cron Job to periodically backup new repos / changes to old repos to local / other service like GitLab
