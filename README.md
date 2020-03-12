@@ -21,7 +21,25 @@ brew install gobackup
 
 ## Usage
 
-TODO
+Before you get started, you are going to need either a GitHub personal access token, or a GitLab personal access token.
+For example, if you want to clone your GitHub public repos and upload them to GitLab, you are going to need a GitLab personal access token.
+if you want to clone ALL your repos on GitHub and upload them to gitlab, you are going to need a personal access token for both of them.
+
+- GitHub Personal Access Token
+// TODO
+
+- GitLab Personal Access Token
+// TODO
+
+```bash
+# clone all the repos to your local machine. --token is optional, but you need it to clone private repositories - token is not required
+gobackup download <platform> <username> --token=123abc
+
+# once you have your repos cloned to your local machine, you can either upload them to GitHub or GitLab - in this case a token is required
+gobackup upload <platform> <directory> --token=123abc
+```
+
+Thats it! All your repos should now be backed to your chosen platform, and you can delete the local copy if you want to :)
 
 ## Milestones
 
