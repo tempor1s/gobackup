@@ -2,7 +2,7 @@
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/tempor1s/gobackup)](https://goreportcard.com/report/github.com/tempor1s/gobackup)
 
-A tool that allows you to backup all your GitHub, GitLab repos onto your local machine, and even upload them to a different repo manager!
+A cli tool that allows you to backup all your GitHub or GitLab repos onto your local machine, and even upload them to a different repo manager!
 
 ## Installation
 
